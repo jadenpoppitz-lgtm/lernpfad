@@ -2,7 +2,7 @@
 // Bewerbungsfunnel: HR lädt Anzeige hoch → Bewerber wählt Kurs oder direkten Skilltest → HR sieht Ergebnisse.
 // Nutzt $, esc, show, state, api, renderPlan aus app.js.
 
-const HRKEY = "lernpfad.hr";
+const HRKEY = "dreamz.hr";
 const view = (html) => { $("s-view").innerHTML = html; show("s-view"); };
 const call = (method, url, body) =>
   fetch(url, { method, headers: { "content-type": "application/json" }, body: body && JSON.stringify(body) })
@@ -79,15 +79,16 @@ async function jobLanding(id) {
     <div class="stack" style="margin-top:24px">
       <button class="primary" id="b-apply" style="margin:0">Direkt bewerben – Skilltest starten</button>
       <button id="b-learn">Erst vorbereiten – Lernplan für diese Stelle</button>
-      <select id="hrs" class="field" aria-label="Zeit pro Woche"><option value="2">2 h pro Woche</option><option value="5" selected>5 h pro Woche</option><option value="10">10 h pro Woche</option><option value="20">20 h pro Woche</option></select>
+      <select id="hrs" class="field" aria-label="Zeit pro Woche"><option value="2">1–2 Stunden pro Woche</option><option value="5" selected>3–5 Stunden pro Woche</option><option value="10">6+ Stunden pro Woche</option></select>
+      <select id="wks" class="field" aria-label="Dauer"><option value="4">4 Wochen</option><option value="8" selected>8 Wochen</option><option value="12">12 Wochen</option></select>
     </div>`);
   $("b-apply").onclick = () => (location.hash = `#/j/${id}/apply`);
-  $("b-learn").onclick = () => learnFor(j, id, j.skills.filter((s) => s.must).map((s) => `${s.name} (Niveau ${s.level})`), +$("hrs").value);
+  $("b-learn").onclick = () => learnFor(j, id, j.skills.filter((s) => s.must).map((s) => `${s.name} (Niveau ${s.level})`), +$("hrs").value, +$("wks").value);
 }
 
 // Kurs: Lernplan aus den Anforderungen der Stelle, danach geht es mit "Jetzt bewerben" zurück
-async function learnFor(j, id, weak, hours) {
-  Object.assign(state, { topic: j.title, context: "Beruf", hours: hours || state.hours || 5, level: 1, jobId: id });
+async function learnFor(j, id, weak, hours, weeks) {
+  Object.assign(state, { topic: j.title, context: "Beruf", hours: hours || state.hours || 5, weeks: weeks || state.weeks || 8, level: 1, jobId: id });
   $("b-learn") && ($("b-learn").textContent = "Lernplan wird erstellt …");
   state.plan = await api("plan", { level: 1, weak }).catch(() => null);
   localStorage.setItem(KEY, JSON.stringify(state));
@@ -123,7 +124,7 @@ function resultView(j, id, r) {
     ${r.practical ? `<h3>Praxisaufgabe: ${r.practical.score}/3</h3><p class="muted">${esc(r.practical.feedback)}</p>` : ""}
     <p class="note">Das Unternehmen sieht genau diese Ergebnisse.</p>
     ${r.gaps.length ? `<h3>Hier kannst du zulegen</h3><p>${r.gaps.map(esc).join(", ")}</p><button class="primary" id="gapplan" style="margin-top:8px">Lernplan für diese Lücken</button>` : ""}`);
-  if (r.gaps.length) $("gapplan").onclick = () => { $("gapplan").textContent = "Lernplan wird erstellt …"; learnFor(j, id, r.gaps.map((g) => g + " (Lücke im Test)"), state.hours); };
+  if (r.gaps.length) $("gapplan").onclick = () => { $("gapplan").textContent = "Lernplan wird erstellt …"; learnFor(j, id, r.gaps.map((g) => g + " (Lücke im Test)"), state.hours, state.weeks); };
 }
 
 /* ---------- HR: Dashboard ---------- */

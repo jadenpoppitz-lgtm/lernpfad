@@ -1,52 +1,93 @@
 "use strict";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const KEY = "lernpfad.v1";
-const state = { topic: "", context: "", hours: 0, level: null };
+const KEY = "dreamz.v1";
+const state = { topic: "", context: "", hours: 0, weeks: 0, level: null };
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function show(id) {
-  document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("active", s.id === id));
+  document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+  void document.body.offsetHeight; // Animation neu starten
+  $(id).classList.add("active");
   window.scrollTo(0, 0);
 }
-
-/* ---------- 1 · Eingabe ---------- */
-const topic = $("topic");
-const ready = () => ($("go").disabled = !(state.context && state.hours));
-
-topic.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    if (topic.value.trim()) $("details").classList.remove("hidden");
-  }
-});
-
-document.querySelectorAll(".chips").forEach((box) =>
-  box.addEventListener("click", (e) => {
-    const b = e.target.closest("button");
-    if (!b) return;
-    box.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
-    state[box.dataset.key] = box.dataset.key === "hours" ? +b.dataset.v : b.dataset.v;
-    ready();
-  })
-);
-
-$("ask-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  state.topic = topic.value.trim();
-  delete state.jobId;
-  if (!state.topic || $("go").disabled) return $("details").classList.remove("hidden");
-  runLoading();
-});
 
 /* ---------- Backend (optional: ohne Server/Key greifen lokale Vorlagen) ---------- */
 const api = (name, extra = {}) =>
   fetch("/api/" + name, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ topic: state.topic, context: state.context, hours: state.hours, ...extra }),
+    body: JSON.stringify({ topic: state.topic, context: state.context, hours: state.hours, weeks: state.weeks, ...extra }),
   }).then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status))));
 
-/* ---------- 2 · Loading: Mind-Map ---------- */
+/* ---------- 1 · Eingabe ---------- */
+const topic = $("topic");
+const EXAMPLES = ["Excel / Tabellenkalkulation", "Gitarre spielen", "Python", "UX Design", "Projektmanagement", "Product Manager", "Präsentieren"];
+
+(function typewriter() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return (topic.placeholder = EXAMPLES[0]);
+  let i = 0, j = 0, del = false;
+  const tick = () => {
+    if (topic.value) { topic.placeholder = ""; return setTimeout(tick, 400); }
+    const w = EXAMPLES[i];
+    j += del ? -1 : 1;
+    topic.placeholder = w.slice(0, j) + "|";
+    let t = del ? 35 : 70;
+    if (!del && j === w.length) { del = true; t = 1400; }
+    else if (del && j === 0) { del = false; i = (i + 1) % EXAMPLES.length; t = 350; }
+    setTimeout(tick, t);
+  };
+  tick();
+})();
+
+topic.addEventListener("input", () => ($("arrow").disabled = !topic.value.trim()));
+$("demo").addEventListener("click", () => {
+  topic.value = "Data Science";
+  topic.dispatchEvent(new Event("input"));
+  topic.focus();
+});
+$("brand").addEventListener("click", (e) => {
+  e.preventDefault();
+  history.replaceState(null, "", location.pathname);
+  show("s-ask");
+});
+
+$("ask-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  state.topic = topic.value.trim();
+  if (!state.topic) return;
+  delete state.jobId;
+  startSteps();
+});
+
+/* ---------- 2 · Drei Fragen, jeweils einzeln ---------- */
+const STEPS = [
+  { key: "context", q: "Warum willst du es lernen?", opts: [["Beruf", "Beruf"], ["Hobby", "Hobby"], ["Privates Projekt", "Privates Projekt"]] },
+  { key: "hours", q: "Wie viel Zeit hast du pro Woche?", opts: [["1–2 Stunden", 2], ["3–5 Stunden", 5], ["6+ Stunden", 10]] },
+  { key: "weeks", q: "Wie lange willst du lernen?", opts: [["4 Wochen", 4], ["8 Wochen", 8], ["12 Wochen", 12]] },
+];
+
+function startSteps() {
+  let i = 0;
+  const draw = () => {
+    const s = STEPS[i];
+    $("step-topic").textContent = state.topic;
+    $("step-q").textContent = s.q;
+    $("step-count").textContent = `0${i + 1} / 0${STEPS.length}`;
+    $("step-opts").innerHTML = s.opts.map(([l, v]) => `<button type="button" data-v="${esc(v)}">${esc(l)}</button>`).join("");
+    show("s-step");
+  };
+  $("step-opts").onclick = (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    const s = STEPS[i];
+    state[s.key] = s.key === "context" ? b.dataset.v : +b.dataset.v;
+    if (++i < STEPS.length) draw(); else runLoading();
+  };
+  draw();
+}
+
+/* ---------- 3 · Loading: Mind-Map ---------- */
 function runLoading() {
   show("s-load");
   const testReq = api("test").catch(() => null);
@@ -62,7 +103,7 @@ function runLoading() {
   const core = make("g", { class: "n core" });
   make("circle", { cx: 200, cy: 200, r: 14 }, core);
 
-  const ARMS = 6, DEPTH = 3, icons = ["🖼️", "📄", "🎬", "🔗", "📄", "🖼️"];
+  const ARMS = 6, DEPTH = 3, icons = ["▣", "≡", "▶", "↗", "≡", "▣"]; // Bild, Dokument, Video, Link
   const steps = [];
   for (let d = 0; d < DEPTH; d++)
     for (let a = 0; a < ARMS; a++) steps.push({ a, d });
@@ -72,7 +113,7 @@ function runLoading() {
   let i = 0;
   const tick = () => {
     if (i >= steps.length) {
-      $("load-text").textContent = "Dein Einstiegstest wird erstellt …";
+      $("load-text").textContent = "Dein Wissenscheck wird erstellt …";
       return testReq.then(startTest);
     }
     const { a, d } = steps[i];
@@ -81,7 +122,7 @@ function runLoading() {
     const p = { x: 200 + Math.cos(ang) * r, y: 200 + Math.sin(ang) * r };
     make("line", { x1: last[a].x, y1: last[a].y, x2: p.x, y2: p.y });
     const g = make("g", { class: "n" });
-    make("rect", { x: p.x - 16, y: p.y - 16, width: 32, height: 32, rx: 8 }, g);
+    make("rect", { x: p.x - 16, y: p.y - 16, width: 32, height: 32, rx: 16 }, g);
     make("text", { x: p.x, y: p.y }, g).textContent = icons[(a + d) % icons.length];
     last[a] = p;
     $("load-text").textContent = msgs[Math.min(2, Math.floor((i / steps.length) * 3))];
@@ -91,7 +132,7 @@ function runLoading() {
   tick();
 }
 
-/* ---------- 3 · Einstiegstest ---------- */
+/* ---------- 4 · Wissenscheck: Video + Fragen ---------- */
 const QUESTIONS = (t) => [
   `Ich kann die Grundbegriffe von „${t}“ in eigenen Worten erklären.`,
   `Ich habe „${t}“ schon praktisch angewendet – nicht nur darüber gelesen.`,
@@ -101,71 +142,82 @@ const QUESTIONS = (t) => [
 ];
 const OPTS = ["Gar nicht", "Ein bisschen", "Meistens", "Sicher"];
 
-// data = Antwort des Backends (Multiple Choice) oder null → Selbsteinschätzung als Fallback
+// data = Antwort des Backends (Multiple Choice + Video) oder null → Selbsteinschätzung als Fallback
 function startTest(data) {
-  let q = 0, score = 0;
-  const weak = [];
   const qs = data ? data.questions : QUESTIONS(state.topic).map((t) => ({ q: t, options: OPTS }));
+  const answers = new Array(qs.length).fill(-1);
+  $("test-topic").textContent = state.topic;
+  $("notes").value = "";
+
+  // Video: erst Karte, geladen wird YouTube erst nach Klick (Datenschutz); Überspringen = einfach weiter nach unten
+  const vid = data && data.video && /^[\w-]{11}$/.test(data.video.id) ? data.video : null;
   const query = data ? data.videoQuery : state.topic + " Einführung für Anfänger";
-  $("intro-video").href = "https://www.youtube.com/results?search_query=" + encodeURIComponent(query);
-  const render = () => {
-    $("test-step").textContent = `Einstiegstest · ${q + 1} / ${qs.length}`;
-    $("test-q").textContent = qs[q].q;
-    $("test-opts").innerHTML = qs[q].options.map((o, v) => `<button data-v="${v}">${esc(o)}</button>`).join("");
-  };
-  $("test-opts").onclick = (e) => {
+  $("test-video").innerHTML = vid
+    ? `<button type="button" class="vcard" id="vplay" aria-label="Video abspielen: ${esc(vid.title)}">
+         <span class="vt">${esc(vid.title)}</span><span class="play" aria-hidden="true">▶</span>
+         <span class="meta"><span>Einführung · ${esc(vid.channel)}</span><span>${vid.minutes ? "ca. " + +vid.minutes + " min" : ""}</span></span></button>
+       <p class="note"><a href="#test-qs" id="vskip">Video überspringen ↓</a></p>`
+    : `<p class="note"><a target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(query)}">▶ Einführungsvideo auf YouTube suchen</a></p>`;
+  if (vid) {
+    $("vplay").onclick = () => {
+      $("vplay").outerHTML = `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${vid.id}?autoplay=1" title="${esc(vid.title)}" allowfullscreen ` +
+        `allow="autoplay; encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"></iframe></div>`;
+    };
+    $("vskip").onclick = (e) => { e.preventDefault(); $("test-qs").scrollIntoView({ behavior: "smooth" }); };
+  }
+
+  $("test-qs").innerHTML = qs.map((q, i) =>
+    `<div class="qh">${String(i + 1).padStart(2, "0")} — ${esc(q.q)}</div>` +
+    `<div class="pills" data-q="${i}">${q.options.map((o, v) => `<button type="button" data-v="${v}">${esc(o)}</button>`).join("")}</div>`).join("");
+  $("test-qs").onclick = (e) => {
     const b = e.target.closest("button");
-    if (!b || b.dataset.v === undefined) return;
-    const v = +b.dataset.v;
-    if (data) { if (v === qs[q].correct) score += 3; else weak.push(qs[q].q); }
-    else score += v;
-    if (++q < qs.length) return render();
+    if (!b) return;
+    const box = b.parentElement;
+    box.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+    answers[+box.dataset.q] = +b.dataset.v;
+    $("test-go").disabled = answers.includes(-1);
+  };
+  $("test-go").disabled = true;
+
+  $("test-go").onclick = () => {
+    let score = 0;
+    const weak = [];
+    answers.forEach((v, i) => {
+      if (data) { if (v === qs[i].correct) score += 3; else weak.push(qs[i].q); }
+      else score += v;
+    });
     const ratio = score / (3 * qs.length);
     state.level = ratio <= 0.2 ? 0 : ratio <= 0.5 ? 1 : ratio <= 0.75 ? 2 : 3;
-    $("test-opts").onclick = null;
-    finishTest(weak);
+    finishTest(weak, $("notes").value.trim());
   };
-  const vid = data && data.video && /^[\w-]{11}$/.test(data.video.id) ? data.video : null;
-  $("intro-video").classList.toggle("hidden", !!vid);
-  if (vid) {
-    // Erst Video (anschauen oder überspringen), danach die Fragen
-    $("test-step").textContent = "Einstieg · Video";
-    $("test-q").textContent = vid.title;
-    $("test-opts").innerHTML =
-      `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${vid.id}" title="${esc(vid.title)}" loading="lazy" allowfullscreen ` +
-      `allow="encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"></iframe></div>` +
-      `<p class="muted small">${esc(vid.channel)}${vid.minutes ? ` · ca. ${+vid.minutes} min` : ""} · Danach folgen ${qs.length} Fragen.</p>` +
-      `<button class="primary" id="v-go" style="margin-top:8px">Weiter zu den Fragen →</button>` +
-      `<button class="ghost" id="v-skip" style="margin-top:8px">Überspringen – kenne ich schon</button>`;
-    $("v-go").onclick = $("v-skip").onclick = render;
-  } else render();
   show("s-test");
 }
 
-async function finishTest(weak) {
-  $("test-q").textContent = "Dein Lernplan wird erstellt …";
-  $("test-opts").innerHTML = "";
-  const plan = await api("plan", { level: state.level, weak }).catch(() => null);
+/* ---------- 5 · Kurs wird erstellt ---------- */
+async function finishTest(weak, notes) {
+  $("wobble").innerHTML = [..."Dein Kurs wird erstellt"]
+    .map((c, i) => `<span style="animation-delay:${(i * 0.07).toFixed(2)}s">${c === " " ? "&nbsp;" : esc(c)}</span>`).join("");
+  show("s-wait");
+  const [plan] = await Promise.all([api("plan", { level: state.level, weak, notes }).catch(() => null), wait(1800)]);
   state.plan = plan;
   localStorage.setItem(KEY, JSON.stringify(state));
   renderPlan();
 }
 
-/* ---------- 4 · Lernplan ---------- */
+/* ---------- 6 · Lernplan ---------- */
 const LEVELS = ["Einsteiger", "Grundlagen vorhanden", "Fortgeschritten", "Sicher"];
 const WEIGHTS = [[3, 3, 3, 1.5], [1.5, 3, 3, 1.5], [0, 3, 3, 2], [0, 1.5, 3, 3]];
 const PROJECT = {
-  "Hobby": "ein kleines Projekt, das dir Freude macht",
   "Beruf": "ein echtes Problem aus deinem Arbeitsalltag",
-  "Studium / Schule": "eine Aufgabe im Stil deiner nächsten Prüfung",
-  "Eigenes Projekt": "den ersten nutzbaren Teil deines Projekts",
+  "Hobby": "ein kleines Projekt, das dir Freude macht",
+  "Privates Projekt": "den ersten nutzbaren Teil deines Projekts",
 };
 
 function phases(t, ctx) {
   return [
     { name: "Fundament", tasks: [`Überblick über „${t}“: die 10 wichtigsten Begriffe und Konzepte`, "Jede Einheit mit 5 Abruffragen ohne Hilfsmittel starten", "Täglich kurz üben statt einmal lang"] },
     { name: "Aufbau", tasks: ["Gezielt an deiner schwächsten Teilfertigkeit arbeiten (Deliberate Practice)", "Übungen verschiedener Typen mischen statt blockweise zu üben", "Wöchentlich ein Selbsttest mit Auswertung der Fehler"] },
-    { name: "Anwendung", tasks: [`Bauen/Lösen: ${PROJECT[ctx]}`, "Ohne Anleitung arbeiten, erst danach Lösungen vergleichen", "Ergebnis jemandem zeigen oder erklären und Feedback holen"] },
+    { name: "Anwendung", tasks: [`Bauen/Lösen: ${PROJECT[ctx] || PROJECT.Hobby}`, "Ohne Anleitung arbeiten, erst danach Lösungen vergleichen", "Ergebnis jemandem zeigen oder erklären und Feedback holen"] },
     { name: "Vertiefung & Transfer", tasks: ["Alte Themen in Abständen wiederholen (nach 1, 3, 7, 21 Tagen)", "Neue, schwierigere Varianten ausprobieren", "Nächste Ziele festlegen und Lernpfad anpassen"] },
   ];
 }
@@ -182,8 +234,7 @@ const SCIENCE = [
 function renderPlan() {
   const { topic: t, context: ctx, hours: h, level } = state;
   const ai = state.plan; // Claude-Plan vom Backend, sonst lokale Vorlage
-  const months = ai ? ai.months : h >= 10 ? 3 : h >= 5 ? 4 : 6;
-  const weeks = Math.round(months * 4.3);
+  const weeks = ai && ai.weeks ? ai.weeks : state.weeks || 8;
   const sessions = Math.min(7, Math.ceil(h / 1.5));
   const mins = Math.round((h * 60) / sessions / 5) * 5;
   const w = WEIGHTS[level], sum = w.reduce((a, b) => a + b, 0);
@@ -201,9 +252,9 @@ function renderPlan() {
   }).join("");
   const science = ai && ai.science ? ai.science.map((s) => [s.name, s.text]) : SCIENCE;
 
-  const split = [["Neues lernen", 20, "#7c9cff"], ["Üben", 50, "#4cc9a0"], ["Abrufen / testen", 20, "#f2b84b"], ["Reflektieren", 10, "#c58cff"]];
-  $("plan-meta").textContent = `${ctx} · ${h} h pro Woche · Startniveau: ${LEVELS[level]}`;
-  $("plan-title").textContent = `${t} in ${months} Monaten`;
+  const split = [["Neues lernen", 20, "#111"], ["Üben", 50, "#555"], ["Abrufen / testen", 20, "#999"], ["Reflektieren", 10, "#ccc"]];
+  $("plan-meta").textContent = `${t} · ${ctx} · ${h} Std. pro Woche · ${LEVELS[level]}`;
+  $("plan-title").textContent = `${t} in ${weeks} Wochen`;
   $("plan-sub").innerHTML =
     (ai && ai.summary ? esc(ai.summary) + "<br>" : "") +
     `Pro Woche <b>${sessions} Einheiten à ca. ${mins} min</b> – lieber kurz und oft.` +
@@ -212,7 +263,7 @@ function renderPlan() {
   $("plan-phases").innerHTML = html;
   $("plan-science").innerHTML = science.map(([n, d]) => `<div class="sci"><b>${esc(n)}</b><span>${esc(d)}</span></div>`).join("");
   $("to-job").classList.toggle("hidden", !state.jobId);
-  $("to-job").textContent = `Jetzt bewerben: ${state.topic} →`;
+  $("to-job").textContent = `Jetzt bewerben: ${t} →`;
   $("to-job").onclick = () => (location.hash = `#/j/${state.jobId}/apply`);
   show("s-plan");
 }
@@ -225,5 +276,5 @@ $("restart").addEventListener("click", () => {
 /* ---------- Start ---------- */
 try {
   const saved = JSON.parse(localStorage.getItem(KEY) || "null");
-  if (saved && saved.level !== null) { Object.assign(state, saved); renderPlan(); }
+  if (saved && saved.level !== null && saved.level !== undefined) { Object.assign(state, saved); renderPlan(); }
 } catch {}

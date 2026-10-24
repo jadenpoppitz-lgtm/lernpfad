@@ -1,6 +1,6 @@
-# Lernpfad
+# dreamz
 
-Minimaler Prototyp einer Lern-App: Thema eingeben → Kontext & Zeit wählen → Mind-Map-Ladescreen → Einstiegstest → Lernplan für 3–6 Monate.
+Minimaler Prototyp einer Lern-App im Design der Figma-Vorlage (Courier Prime, schwarz auf weiß, Pill-Buttons): Thema eingeben → drei Fragen (Warum, Zeit pro Woche, Dauer in Wochen) → Mind-Map-Ladescreen → Wissenscheck mit Video → Lernplan.
 
 Kein Build, keine Abhängigkeiten: Frontend (`index.html`, `style.css`, `app.js`) und ein winziger Node-Server (`server.js`), der die Claude API kapselt, damit der Key nie im Browser landet.
 
@@ -18,10 +18,10 @@ Ohne Key startet derselbe Server im **Vorlagen-Modus** (Selbsteinschätzung + St
 
 ## Ablauf
 
-1. **Eingabe** – nur ein Feld; nach Enter erscheinen Kontext (Hobby/Beruf/…) und Wochenstunden.
-2. **Loading** – animierte Mind-Map, an jedem Arm kommen Bild-/Dokument-Knoten dazu.
-3. **Einstiegstest** – mit `YOUTUBE_API_KEY` zuerst ein automatisch gefundenes, einbettbares Einführungsvideo (anschauen oder überspringen), danach mit Claude: 6 themenspezifische Multiple-Choice-Fragen (leicht → schwer) + Suchlink für ein Einführungsvideo; ohne Key: 5 Selbsteinschätzungsfragen → Startniveau 0–3.
-4. **Lernplan** – 3–6 Monate (je nach Wochenstunden); mit Claude themenspezifisch aus Niveau und Schwächen erzeugt, sonst Vorlage. Mit Wochenrhythmus und Studienbezug (Spacing, Testing-Effekt, Deliberate Practice, Interleaving, Desirable Difficulties, Habit-Bildung).
+1. **Eingabe** – nur Frage und Suchfeld (animierte Beispiele, Demo-Link „Data Science“); danach drei Einzelfragen: Warum (Beruf/Hobby/Privates Projekt), Zeit pro Woche (1–2 / 3–5 / 6+ Std.), Dauer (4 / 8 / 12 Wochen).
+2. **Loading** – animierte Mind-Map, an jedem Arm kommen Bild-/Dokument-/Video-/Link-Knoten dazu.
+3. **Wissenscheck** – eine Seite: Videokarte oben (YouTube lädt erst nach Klick, „Video überspringen ↓“), darunter alle Fragen als Pills und ein Feld „Weitere Präferenzen“. Mit `YOUTUBE_API_KEY` ein automatisch gefundenes Video, mit Claude Multiple-Choice-Fragen, ohne Key Selbsteinschätzung – mit `YOUTUBE_API_KEY` zuerst ein automatisch gefundenes, einbettbares Einführungsvideo (anschauen oder überspringen), danach mit Claude: 6 themenspezifische Multiple-Choice-Fragen (leicht → schwer) + Suchlink für ein Einführungsvideo; ohne Key: 5 Selbsteinschätzungsfragen → Startniveau 0–3.
+4. **Lernplan** – so viele Wochen, wie gewählt (4/8/12); mit Claude themenspezifisch aus Niveau und Schwächen erzeugt, sonst Vorlage. Mit Wochenrhythmus und Studienbezug (Spacing, Testing-Effekt, Deliberate Practice, Interleaving, Desirable Difficulties, Habit-Bildung).
 
 Der Stand wird im `localStorage` gespeichert.
 

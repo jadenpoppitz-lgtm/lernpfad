@@ -3,61 +3,66 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lernpfad</title>
+<title>dreamz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<a class="brand" id="brand" href="#" aria-label="dreamz Startseite">dream<span>z</span></a>
 <main id="app">
 
   <!-- 1 · Eingabe -->
   <section id="s-ask" class="screen active">
-    <form id="ask-form">
-      <input id="topic" type="text" autocomplete="off" autofocus
-             placeholder="Was möchtest du lernen?" aria-label="Was möchtest du lernen?">
-      <div id="details" class="hidden">
-        <p class="label">In welchem Kontext?</p>
-        <div class="chips" data-key="context">
-          <button type="button" data-v="Hobby">Hobby</button>
-          <button type="button" data-v="Beruf">Beruf</button>
-          <button type="button" data-v="Studium / Schule">Studium / Schule</button>
-          <button type="button" data-v="Eigenes Projekt">Eigenes Projekt</button>
-        </div>
-        <p class="label">Wie viel Zeit pro Woche?</p>
-        <div class="chips" data-key="hours">
-          <button type="button" data-v="2">2 h</button>
-          <button type="button" data-v="5">5 h</button>
-          <button type="button" data-v="10">10 h</button>
-          <button type="button" data-v="20">20 h</button>
-        </div>
-        <button id="go" class="primary" disabled>Lernpfad erstellen →</button>
-      </div>
+    <h1>Was willst du können?</h1>
+    <form id="ask-form" class="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <input id="topic" type="text" autocomplete="off" autofocus aria-label="Skill, Rolle oder Ziel eingeben">
+      <button type="submit" id="arrow" class="arrow" aria-label="Weiter" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+      </button>
     </form>
-    <a href="#/hr" class="muted small">Für Unternehmen: Stellenanzeige hochladen →</a>
+    <button type="button" id="demo" class="textlink">Demo: Data Science</button>
+    <a href="#/hr" class="textlink faint">Für Unternehmen: Stellenanzeige hochladen</a>
   </section>
 
-  <!-- Funnel-Ansichten (HR, Bewerbung, Dashboard) – siehe jobs.js -->
-  <section id="s-view" class="screen wide"></section>
+  <!-- 2 · Drei Fragen, jeweils einzeln -->
+  <section id="s-step" class="screen step">
+    <p class="eyebrow" id="step-topic"></p>
+    <h2 id="step-q"></h2>
+    <p class="count" id="step-count"></p>
+    <div class="pills" id="step-opts"></div>
+  </section>
 
-  <!-- 2 · Loading (Mind-Map) -->
+  <!-- 3 · Loading (Mind-Map) -->
   <section id="s-load" class="screen">
     <svg id="map" viewBox="0 0 400 400" aria-hidden="true"></svg>
     <p id="load-text" class="muted"></p>
   </section>
 
-  <!-- 3 · Einstiegstest -->
-  <section id="s-test" class="screen">
-    <p class="muted" id="test-step"></p>
-    <h2 id="test-q"></h2>
-    <div id="test-opts" class="stack"></div>
-    <a id="intro-video" class="muted small" target="_blank" rel="noopener">▶ Einstiegsvideo ansehen</a>
+  <!-- 4 · Wissenscheck: Video + Fragen -->
+  <section id="s-test" class="screen top">
+    <p class="eyebrow" id="test-topic"></p>
+    <h2>Kurzer Wissenscheck.</h2>
+    <div id="test-video"></div>
+    <div id="test-qs"></div>
+    <label for="notes" class="qh strong">Weitere Präferenzen</label>
+    <textarea id="notes" maxlength="500" placeholder="Was sollen wir bei deinem Kurs berücksichtigen?"></textarea>
+    <button id="test-go" class="primary" disabled>Kurs erstellen →</button>
   </section>
 
-  <!-- 4 · Lernplan -->
-  <section id="s-plan" class="screen wide">
+  <!-- 5 · Kurs wird erstellt -->
+  <section id="s-wait" class="screen">
+    <h2 id="wobble">Dein Kurs wird erstellt</h2>
+  </section>
+
+  <!-- 6 · Lernplan -->
+  <section id="s-plan" class="screen top">
     <header>
-      <p class="muted" id="plan-meta"></p>
+      <p class="eyebrow" id="plan-meta"></p>
       <h1 id="plan-title"></h1>
-      <p id="plan-sub"></p>
+      <div id="plan-sub"></div>
     </header>
     <div id="plan-phases"></div>
     <h3>Warum dieser Plan funktioniert</h3>
@@ -65,6 +70,9 @@
     <button id="to-job" class="primary hidden"></button>
     <button id="restart" class="ghost">Neu starten</button>
   </section>
+
+  <!-- Funnel-Ansichten (HR, Bewerbung, Dashboard) – siehe jobs.js -->
+  <section id="s-view" class="screen top"></section>
 
 </main>
 <script src="app.js"></script>
