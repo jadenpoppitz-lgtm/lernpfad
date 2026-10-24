@@ -141,10 +141,18 @@ const QUESTIONS = (t) => [
   `Ich könnte einem Anfänger „${t}“ sinnvoll beibringen.`,
 ];
 const OPTS = ["Gar nicht", "Ein bisschen", "Meistens", "Sicher"];
+// Themenspezifische Selbsteinschätzung (Fallback ohne Claude) für die Demo „Data Science“
+const DS_CHECK = [
+  ["Wie sicher fühlst du dich mit Daten?", ["Ganz am Anfang", "Etwas Erfahrung", "Sehr sicher"]],
+  ["Hast du schon mit Python gearbeitet?", ["Noch nie", "Ein wenig", "Regelmäßig"]],
+  ["Wie gut kennst du Statistik?", ["Kaum", "Grundlagen", "Fortgeschritten"]],
+  ["Hast du Erfahrung mit SQL?", ["Nein", "Grundlagen", "Ja, sicher"]],
+  ["Kennst du bereits Machine Learning?", ["Noch nicht", "Theoretisch", "Praktisch"]],
+].map(([q, options]) => ({ q, options }));
 
 // data = Antwort des Backends (Multiple Choice + Video) oder null → Selbsteinschätzung als Fallback
 function startTest(data) {
-  const qs = data ? data.questions : QUESTIONS(state.topic).map((t) => ({ q: t, options: OPTS }));
+  const qs = data ? data.questions : /data\s*science/i.test(state.topic) ? DS_CHECK : QUESTIONS(state.topic).map((t) => ({ q: t, options: OPTS }));
   const answers = new Array(qs.length).fill(-1);
   $("test-topic").textContent = state.topic;
   $("notes").value = "";
@@ -184,7 +192,7 @@ function startTest(data) {
     const weak = [];
     answers.forEach((v, i) => {
       if (data) { if (v === qs[i].correct) score += 3; else weak.push(qs[i].q); }
-      else score += v;
+      else score += (v * 3) / (qs[i].options.length - 1);
     });
     const ratio = score / (3 * qs.length);
     state.level = ratio <= 0.2 ? 0 : ratio <= 0.5 ? 1 : ratio <= 0.75 ? 2 : 3;

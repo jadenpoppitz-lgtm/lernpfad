@@ -35,13 +35,15 @@ Setze `YOUTUBE_API_KEY` ([YouTube Data API v3](https://console.cloud.google.com/
 2. HR bekommt einen **Bewerber-Link** (in die Anzeige setzen) und ein **privates Dashboard**.
 3. **Bewerber** sehen offen, was erwartet wird, und wählen: *Direkt bewerben* (Skilltest) oder *Erst vorbereiten* (der von HR geprüfte Kurs der Stelle, danach „Jetzt bewerben“).
 4. Nach dem Test sehen Bewerber ihr Ergebnis pro Skill (dasselbe wie HR) und bekommen für Lücken einen Lernplan – auch wenn es nicht klappt, bleibt das Lernziel.
-5. HR sieht Bewerber nach Ergebnis sortiert, mit Skill-Aufschlüsselung. Das ist Entscheidungshilfe, kein automatisches Aussortieren.
+5. **Mock-Exam bei Data-Science-Stellen:** Fragen → **Praxisteil im Fake-Terminal** (5-Minuten-Timer, Projektordner mit `README.md`, Notizen und einer CSV; Befehle `ls`, `cd`, `cat`, `head`, `describe`, `corr`, `clean`, `submit`) → **Erklärvideo-Upload** („warum bist du so vorgegangen?“, mp4/webm/mov bis 150 MB, optional überspringbar). Die Aufgabe: die Variable mit der stärksten Korrelation zum Verbrauch finden. Die Rohdaten enthalten Sensorfehler (-999), die die Korrelation verdecken, die Luftfeuchte ist ein plausibler Fehlgriff. Nur wer bereinigt, findet `temperatur_c` (r ≈ −0,97).
+6. HR sieht Bewerber nach Ergebnis sortiert, mit Skill-Aufschlüsselung, Terminal-Ergebnis (richtig/falsch, Zeit, Befehlsverlauf), Erklärvideo-Player. Das ist Entscheidungshilfe, kein automatisches Aussortieren.
 
-Daten liegen in `data/db.json` (nicht im Repo). Das Dashboard ist nur über den geheimen Token-Link erreichbar.
+Daten und Videos liegen in `data/` (nicht im Repo). Die **Demo-Anzeige** nutzt einen kuratierten Entwurf mit sieben fachlich geprüften Data-Science-Fragen und passendem Kurs – das funktioniert auch ohne API-Key. Bei veröffentlichten Stellen werden die Antwortoptionen gemischt. Das Dashboard ist nur über den geheimen Token-Link erreichbar.
 
 ## Prototyp-Grenzen / nächste Schritte
 
-- Der Praxistest wird von Claude bewertet und ist nicht betrugssicher (KI-Hilfe möglich); für Finalisten ein kurzes Live-Gespräch einplanen.
+- Datensatz und erwartete Antwort des Terminals stecken im Browsercode (`exam.js`); ein Bewerber, der den Quelltext liest, kann sie finden. Für Ernstfälle serverseitig auswerten oder pro Bewerber neu erzeugen. Der Terminal-Test ist außerdem nicht betrugssicher; das Erklärvideo und ein Live-Gespräch sind die Gegenprobe.
+- Der Praxistest bei Nicht-Data-Science-Stellen wird von Claude bewertet und ist nicht betrugssicher (KI-Hilfe möglich); für Finalisten ein kurzes Live-Gespräch einplanen.
 - Kein Rate-Limit, keine Nutzerkonten, Token-Link statt Login, Datei statt Datenbank (DSGVO: Löschfunktion fehlt) – vor einem öffentlichen Deployment ergänzen. Außerdem – vor einem öffentlichen Deployment ergänzen, sonst kann jeder deinen Key verbrauchen.
 - Studienangaben im Plan stammen vom Modell und sind nicht verifiziert.
 - Die Mind-Map-Knoten sind Platzhalter-Icons; später echte Bilder/Dokumente.
