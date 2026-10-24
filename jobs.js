@@ -204,7 +204,7 @@ function examIntro(j, id, base) {
 const VIDEO_OK = { mp4: "video/mp4", webm: "video/webm", mov: "video/quicktime" };
 function videoStep(j, id, payload) {
   view(`<p class="eyebrow">Letzter Schritt</p><h1>Erkläre dein Vorgehen</h1>
-    <p>${payload.terminal.timedOut ? "Die Zeit ist abgelaufen. " : ""}Lade ein kurzes Video hoch (max. 3 Minuten, mp4, webm oder mov, bis 150 MB), in dem du erklärst, <b>warum</b> du so vorgegangen bist: Welche Schritte hast du gemacht, was hast du geprüft und wie sicher bist du dir?</p>
+    <p>${payload.terminal.timedOut ? "Die Zeit ist abgelaufen. " : ""}Lade ein kurzes Video hoch (max. 3 Minuten, mp4, webm oder mov, bis 150 MB, auf der Online-Demo max. 4 MB), in dem du erklärst, <b>warum</b> du so vorgegangen bist: Welche Schritte hast du gemacht, was hast du geprüft und wie sicher bist du dir?</p>
     <input type="file" id="vf" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" style="margin-top:16px">
     <div class="meter wide" id="vbar" hidden><i style="width:0"></i></div>
     <p id="vmsg" class="muted small"></p>
@@ -228,7 +228,12 @@ function putVideo(id, r, v, onProgress) {
     x.open("POST", `/api/job/${id}/video?app=${encodeURIComponent(r.appId)}&t=${encodeURIComponent(r.upToken)}`);
     x.setRequestHeader("content-type", v.type);
     x.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total);
-    x.onload = () => (x.status === 200 ? resolve() : reject(new Error((JSON.parse(x.responseText || "{}").error) || x.status)));
+    x.onload = () => {
+      if (x.status === 200) return resolve();
+      let m = "";
+      try { m = JSON.parse(x.responseText).error; } catch {}
+      reject(new Error(m || (x.status === 413 ? "Video zu groß für diesen Server" : "Fehler " + x.status)));
+    };
     x.onerror = () => reject(new Error("Netzwerkfehler"));
     x.send(v.file);
   });

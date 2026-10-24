@@ -94,7 +94,9 @@ const handlers = {
 };
 
 /* ---------- Stellenanzeigen-Funnel ---------- */
-const DB_FILE = path.join(__dirname, "data", "db.json");
+// Auf Vercel ist nur /tmp beschreibbar (pro Instanz, nicht dauerhaft) – für echten Betrieb Datenbank/Blob-Speicher anbinden
+const DATA_DIR = process.env.VERCEL ? "/tmp/dreamz" : path.join(__dirname, "data");
+const DB_FILE = path.join(DATA_DIR, "db.json");
 const db = (() => { try { return JSON.parse(fs.readFileSync(DB_FILE, "utf8")); } catch { return { jobs: {} }; } })();
 const save = () => { fs.mkdirSync(path.dirname(DB_FILE), { recursive: true }); fs.writeFileSync(DB_FILE, JSON.stringify(db)); };
 const rid = (n) => crypto.randomBytes(n).toString("base64url");
@@ -241,8 +243,9 @@ async function applyTo(job, b) {
 }
 
 const VIDEO_TYPES = { "video/mp4": ".mp4", "video/webm": ".webm", "video/quicktime": ".mov" };
-const VIDEO_DIR = path.join(__dirname, "data", "videos");
-const MAX_VIDEO = 150 * 1024 * 1024;
+const VIDEO_DIR = path.join(DATA_DIR, "videos");
+const MAX_VIDEO = (process.env.VERCEL ? 4 : 150) * 1024 * 1024; // Vercel-Funktionen erlauben nur ca. 4,5 MB Request-Body
+const MAX_VIDEO_MB = MAX_VIDEO / 1024 / 1024;
 
 function uploadVideo(req, a, ext) {
   return new Promise((resolve, reject) => {
@@ -254,7 +257,7 @@ function uploadVideo(req, a, ext) {
       size += c.length;
       if (size > MAX_VIDEO && !failed) {
         failed = true; req.unpipe(out); out.destroy(); fs.unlink(target, () => {});
-        reject(fail("Video zu groß (max. 150 MB)", 413)); req.resume();
+        reject(fail(`Video zu groß (max. ${MAX_VIDEO_MB} MB)`, 413)); req.resume();
       }
     });
     req.pipe(out);
@@ -316,7 +319,7 @@ async function jobRoutes(req, res, url, send) {
         if (!a || a.upToken !== qs.get("t")) throw fail("Kein Zugriff", 403);
         if (!ext) throw fail("Nur mp4, webm oder mov", 415);
         if (a.video) throw fail("Video bereits hochgeladen", 409);
-        if (+req.headers["content-length"] > MAX_VIDEO) throw fail("Video zu groß (max. 150 MB)", 413);
+        if (+req.headers["content-length"] > MAX_VIDEO) throw fail(`Video zu groß (max. ${MAX_VIDEO_MB} MB)`, 413);
         await uploadVideo(req, a, ext);
         json(200, { ok: true });
       } else if (req.method === "GET" && (sub === "video" || sub === "applicants")) {
@@ -358,7 +361,7 @@ function clean(b) {
   };
 }
 
-http.createServer(async (req, res) => {
+const handler = async (req, res) => {
   const url = req.url.split("?")[0];
   const send = (code, type, body) => { res.writeHead(code, { "content-type": type }); res.end(body); };
 
@@ -377,4 +380,9 @@ http.createServer(async (req, res) => {
   const file = req.method === "GET" && STATIC[url];
   if (!file) return send(404, "text/plain", "Not found");
   send(200, TYPES[path.extname(file)], fs.readFileSync(path.join(__dirname, file)));
-}).listen(PORT, () => console.log(`Lernpfad auf http://localhost:${PORT}` + (API_KEY ? "" : "  (ohne ANTHROPIC_API_KEY: Vorlagen-Modus)")));
+};
+
+module.exports = { handler };
+if (require.main === module) {
+  http.createServer(handler).listen(PORT, () => console.log(`Lernpfad auf http://localhost:${PORT}` + (API_KEY ? "" : "  (ohne ANTHROPIC_API_KEY: Vorlagen-Modus)")));
+}
