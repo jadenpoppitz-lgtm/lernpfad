@@ -33,6 +33,7 @@ document.querySelectorAll(".chips").forEach((box) =>
 $("ask-form").addEventListener("submit", (e) => {
   e.preventDefault();
   state.topic = topic.value.trim();
+  delete state.jobId;
   if (!state.topic || $("go").disabled) return $("details").classList.remove("hidden");
   runLoading();
 });
@@ -197,12 +198,15 @@ function renderPlan() {
     `<span class="muted small">${split.map(([n, p]) => `${n} ${p} %`).join(" · ")}</span>`;
   $("plan-phases").innerHTML = html;
   $("plan-science").innerHTML = science.map(([n, d]) => `<div class="sci"><b>${esc(n)}</b><span>${esc(d)}</span></div>`).join("");
+  $("to-job").classList.toggle("hidden", !state.jobId);
+  $("to-job").textContent = `Jetzt bewerben: ${state.topic} →`;
+  $("to-job").onclick = () => (location.hash = `#/j/${state.jobId}/apply`);
   show("s-plan");
 }
 
 $("restart").addEventListener("click", () => {
   localStorage.removeItem(KEY);
-  location.reload();
+  location.href = location.pathname;
 });
 
 /* ---------- Start ---------- */

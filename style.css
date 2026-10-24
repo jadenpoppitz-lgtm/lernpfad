@@ -61,3 +61,22 @@ h3 { margin: 36px 0 4px; }
 .bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin: 10px 0 4px; }
 .bar i { display: block; }
 .sci span { color: var(--muted); font-size: .88rem; }
+
+/* Funnel */
+textarea, .field {
+  width: 100%; padding: 12px; font: inherit; color: var(--fg); background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px; outline: none;
+}
+textarea { min-height: 160px; resize: vertical; }
+textarea:focus, .field:focus { border-color: var(--accent); }
+fieldset { border: 0; padding: 0; margin: 18px 0 0; }
+legend { font-weight: 600; margin-bottom: 6px; }
+.opt { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; cursor: pointer; }
+.row { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.tag { font-size: .75rem; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; margin-left: 6px; }
+.tag.must { color: var(--accent); border-color: var(--accent); }
+.meter { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; width: 120px; }
+.meter i { display: block; height: 100%; background: var(--accent); }
+.x { padding: 2px 9px; color: var(--muted); }
+.note { color: var(--muted); font-size: .85rem; margin-top: 18px; }
+.link { word-break: break-all; font-size: .9rem; }

@@ -25,9 +25,20 @@ Ohne Key startet derselbe Server im **Vorlagen-Modus** (Selbsteinschätzung + St
 
 Der Stand wird im `localStorage` gespeichert.
 
+## Bewerbungsfunnel (Unternehmen → Plattform)
+
+1. **HR** öffnet `#/hr`, fügt die Stellenanzeige ein (Text oder .txt). Claude erzeugt Skill-Profil (Hard/Soft, Niveau, Muss/Nice), 6 Testfragen und eine Praxisaufgabe. HR prüft, streicht Unpassendes und veröffentlicht.
+2. HR bekommt einen **Bewerber-Link** (in die Anzeige setzen) und ein **privates Dashboard**.
+3. **Bewerber** sehen offen, was erwartet wird, und wählen: *Direkt bewerben* (Skilltest) oder *Erst vorbereiten* (Lernplan aus den Muss-Skills, danach „Jetzt bewerben“).
+4. Nach dem Test sehen Bewerber ihr Ergebnis pro Skill (dasselbe wie HR) und bekommen für Lücken einen Lernplan – auch wenn es nicht klappt, bleibt das Lernziel.
+5. HR sieht Bewerber nach Ergebnis sortiert, mit Skill-Aufschlüsselung. Das ist Entscheidungshilfe, kein automatisches Aussortieren.
+
+Daten liegen in `data/db.json` (nicht im Repo). Das Dashboard ist nur über den geheimen Token-Link erreichbar.
+
 ## Prototyp-Grenzen / nächste Schritte
 
-- Kein Rate-Limit und keine Authentifizierung im Server – vor einem öffentlichen Deployment ergänzen, sonst kann jeder deinen Key verbrauchen.
+- Der Praxistest wird von Claude bewertet und ist nicht betrugssicher (KI-Hilfe möglich); für Finalisten ein kurzes Live-Gespräch einplanen.
+- Kein Rate-Limit, keine Nutzerkonten, Token-Link statt Login, Datei statt Datenbank (DSGVO: Löschfunktion fehlt) – vor einem öffentlichen Deployment ergänzen. Außerdem – vor einem öffentlichen Deployment ergänzen, sonst kann jeder deinen Key verbrauchen.
 - Studienangaben im Plan stammen vom Modell und sind nicht verifiziert.
 - Die Mind-Map-Knoten sind Platzhalter-Icons; später echte Bilder/Dokumente.
 - Spaced-Repetition-Karten und Fortschrittstracking pro Woche.

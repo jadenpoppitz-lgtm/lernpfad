@@ -32,7 +32,11 @@
         <button id="go" class="primary" disabled>Lernpfad erstellen →</button>
       </div>
     </form>
+    <a href="#/hr" class="muted small">Für Unternehmen: Stellenanzeige hochladen →</a>
   </section>
+
+  <!-- Funnel-Ansichten (HR, Bewerbung, Dashboard) – siehe jobs.js -->
+  <section id="s-view" class="screen wide"></section>
 
   <!-- 2 · Loading (Mind-Map) -->
   <section id="s-load" class="screen">
@@ -58,10 +62,12 @@
     <div id="plan-phases"></div>
     <h3>Warum dieser Plan funktioniert</h3>
     <div id="plan-science"></div>
+    <button id="to-job" class="primary hidden"></button>
     <button id="restart" class="ghost">Neu starten</button>
   </section>
 
 </main>
 <script src="app.js"></script>
+<script src="jobs.js"></script>
 </body>
 </html>
