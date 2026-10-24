@@ -37,9 +37,18 @@ $("ask-form").addEventListener("submit", (e) => {
   runLoading();
 });
 
+/* ---------- Backend (optional: ohne Server/Key greifen lokale Vorlagen) ---------- */
+const api = (name, extra = {}) =>
+  fetch("/api/" + name, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ topic: state.topic, context: state.context, hours: state.hours, ...extra }),
+  }).then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status))));
+
 /* ---------- 2 · Loading: Mind-Map ---------- */
 function runLoading() {
   show("s-load");
+  const testReq = api("test").catch(() => null);
   const svg = $("map");
   const NS = "http://www.w3.org/2000/svg";
   const make = (tag, attrs, parent = svg) => {
@@ -61,7 +70,10 @@ function runLoading() {
   const msgs = ["Quellen werden gesammelt …", "Bilder und Dokumente werden gesichtet …", "Wissen wird geordnet …"];
   let i = 0;
   const tick = () => {
-    if (i >= steps.length) return setTimeout(startTest, 600);
+    if (i >= steps.length) {
+      $("load-text").textContent = "Dein Einstiegstest wird erstellt …";
+      return testReq.then(startTest);
+    }
     const { a, d } = steps[i];
     const ang = (a / ARMS) * Math.PI * 2 - Math.PI / 2 + (d % 2 ? 0.18 : -0.12);
     const r = 62 + d * 48;
@@ -88,26 +100,41 @@ const QUESTIONS = (t) => [
 ];
 const OPTS = ["Gar nicht", "Ein bisschen", "Meistens", "Sicher"];
 
-function startTest() {
+// data = Antwort des Backends (Multiple Choice) oder null → Selbsteinschätzung als Fallback
+function startTest(data) {
   let q = 0, score = 0;
-  const qs = QUESTIONS(state.topic);
-  $("intro-video").href = "https://www.youtube.com/results?search_query=" + encodeURIComponent(state.topic + " Einführung für Anfänger");
+  const weak = [];
+  const qs = data ? data.questions : QUESTIONS(state.topic).map((t) => ({ q: t, options: OPTS }));
+  const query = data ? data.videoQuery : state.topic + " Einführung für Anfänger";
+  $("intro-video").href = "https://www.youtube.com/results?search_query=" + encodeURIComponent(query);
   const render = () => {
     $("test-step").textContent = `Einstiegstest · ${q + 1} / ${qs.length}`;
-    $("test-q").textContent = qs[q];
-    $("test-opts").innerHTML = OPTS.map((o, v) => `<button data-v="${v}">${o}</button>`).join("");
+    $("test-q").textContent = qs[q].q;
+    $("test-opts").innerHTML = qs[q].options.map((o, v) => `<button data-v="${v}">${esc(o)}</button>`).join("");
   };
   $("test-opts").onclick = (e) => {
     const b = e.target.closest("button");
     if (!b) return;
-    score += +b.dataset.v;
+    const v = +b.dataset.v;
+    if (data) { if (v === qs[q].correct) score += 3; else weak.push(qs[q].q); }
+    else score += v;
     if (++q < qs.length) return render();
-    state.level = score <= 3 ? 0 : score <= 7 ? 1 : score <= 11 ? 2 : 3;
-    localStorage.setItem(KEY, JSON.stringify(state));
-    renderPlan();
+    const ratio = score / (3 * qs.length);
+    state.level = ratio <= 0.2 ? 0 : ratio <= 0.5 ? 1 : ratio <= 0.75 ? 2 : 3;
+    $("test-opts").onclick = null;
+    finishTest(weak);
   };
   render();
   show("s-test");
+}
+
+async function finishTest(weak) {
+  $("test-q").textContent = "Dein Lernplan wird erstellt …";
+  $("test-opts").innerHTML = "";
+  const plan = await api("plan", { level: state.level, weak }).catch(() => null);
+  state.plan = plan;
+  localStorage.setItem(KEY, JSON.stringify(state));
+  renderPlan();
 }
 
 /* ---------- 4 · Lernplan ---------- */
@@ -140,31 +167,36 @@ const SCIENCE = [
 
 function renderPlan() {
   const { topic: t, context: ctx, hours: h, level } = state;
-  const months = h >= 10 ? 3 : h >= 5 ? 4 : 6;
+  const ai = state.plan; // Claude-Plan vom Backend, sonst lokale Vorlage
+  const months = ai ? ai.months : h >= 10 ? 3 : h >= 5 ? 4 : 6;
   const weeks = Math.round(months * 4.3);
   const sessions = Math.min(7, Math.ceil(h / 1.5));
   const mins = Math.round((h * 60) / sessions / 5) * 5;
   const w = WEIGHTS[level], sum = w.reduce((a, b) => a + b, 0);
 
+  const list = ai
+    ? ai.phases.map((p) => ({ name: p.name, tasks: p.tasks || [], len: Math.max(1, +p.weeks || 1) }))
+    : phases(t, ctx).map((p, i) => ({ ...p, len: w[i] ? Math.max(1, Math.round((w[i] / sum) * weeks)) : 0 }));
   let from = 1;
-  const html = phases(t, ctx).map((p, i) => {
-    if (!w[i]) return "";
-    const len = Math.max(1, Math.round((w[i] / sum) * weeks));
-    const to = Math.min(weeks, from + len - 1);
+  const html = list.map((p) => {
+    if (!p.len) return "";
+    const to = from + p.len - 1;
     const range = from === to ? `Woche ${from}` : `Woche ${from}–${to}`;
     from = to + 1;
-    return `<div class="phase"><span class="when">${range}</span><b>${p.name}</b><ul>${p.tasks.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>`;
+    return `<div class="phase"><span class="when">${range}</span><b>${esc(p.name)}</b><ul>${p.tasks.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>`;
   }).join("");
+  const science = ai && ai.science ? ai.science.map((s) => [s.name, s.text]) : SCIENCE;
 
   const split = [["Neues lernen", 20, "#7c9cff"], ["Üben", 50, "#4cc9a0"], ["Abrufen / testen", 20, "#f2b84b"], ["Reflektieren", 10, "#c58cff"]];
   $("plan-meta").textContent = `${ctx} · ${h} h pro Woche · Startniveau: ${LEVELS[level]}`;
   $("plan-title").textContent = `${t} in ${months} Monaten`;
   $("plan-sub").innerHTML =
+    (ai && ai.summary ? esc(ai.summary) + "<br>" : "") +
     `Pro Woche <b>${sessions} Einheiten à ca. ${mins} min</b> – lieber kurz und oft.` +
     `<div class="bar">${split.map(([, p, c]) => `<i style="width:${p}%;background:${c}"></i>`).join("")}</div>` +
     `<span class="muted small">${split.map(([n, p]) => `${n} ${p} %`).join(" · ")}</span>`;
   $("plan-phases").innerHTML = html;
-  $("plan-science").innerHTML = SCIENCE.map(([n, d]) => `<div class="sci"><b>${n}</b><span>${d}</span></div>`).join("");
+  $("plan-science").innerHTML = science.map(([n, d]) => `<div class="sci"><b>${esc(n)}</b><span>${esc(d)}</span></div>`).join("");
   show("s-plan");
 }
 
