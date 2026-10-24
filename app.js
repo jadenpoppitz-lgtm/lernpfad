@@ -115,7 +115,7 @@ function startTest(data) {
   };
   $("test-opts").onclick = (e) => {
     const b = e.target.closest("button");
-    if (!b) return;
+    if (!b || b.dataset.v === undefined) return;
     const v = +b.dataset.v;
     if (data) { if (v === qs[q].correct) score += 3; else weak.push(qs[q].q); }
     else score += v;
@@ -125,7 +125,20 @@ function startTest(data) {
     $("test-opts").onclick = null;
     finishTest(weak);
   };
-  render();
+  const vid = data && data.video && /^[\w-]{11}$/.test(data.video.id) ? data.video : null;
+  $("intro-video").classList.toggle("hidden", !!vid);
+  if (vid) {
+    // Erst Video (anschauen oder überspringen), danach die Fragen
+    $("test-step").textContent = "Einstieg · Video";
+    $("test-q").textContent = vid.title;
+    $("test-opts").innerHTML =
+      `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${vid.id}" title="${esc(vid.title)}" loading="lazy" allowfullscreen ` +
+      `allow="encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"></iframe></div>` +
+      `<p class="muted small">${esc(vid.channel)} · Danach folgen ${qs.length} Fragen.</p>` +
+      `<button class="primary" id="v-go" style="margin-top:8px">Weiter zu den Fragen →</button>` +
+      `<button class="ghost" id="v-skip" style="margin-top:8px">Überspringen – kenne ich schon</button>`;
+    $("v-go").onclick = $("v-skip").onclick = render;
+  } else render();
   show("s-test");
 }
 

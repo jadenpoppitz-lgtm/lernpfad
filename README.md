@@ -14,16 +14,20 @@ export ANTHROPIC_API_KEY=sk-ant-...
 node server.js        # http://localhost:3000
 ```
 
-Ohne Key startet derselbe Server im **Vorlagen-Modus** (Selbsteinschätzung + Standardplan). Optional: `CLAUDE_MODEL`, `PORT`.
+Ohne Key startet derselbe Server im **Vorlagen-Modus** (Selbsteinschätzung + Standardplan). Optional: `CLAUDE_MODEL`, `PORT`, `YOUTUBE_API_KEY` (siehe unten).
 
 ## Ablauf
 
 1. **Eingabe** – nur ein Feld; nach Enter erscheinen Kontext (Hobby/Beruf/…) und Wochenstunden.
 2. **Loading** – animierte Mind-Map, an jedem Arm kommen Bild-/Dokument-Knoten dazu.
-3. **Einstiegstest** – mit Claude: 6 themenspezifische Multiple-Choice-Fragen (leicht → schwer) + Suchlink für ein Einführungsvideo; ohne Key: 5 Selbsteinschätzungsfragen → Startniveau 0–3.
+3. **Einstiegstest** – mit `YOUTUBE_API_KEY` zuerst ein automatisch gefundenes, einbettbares Einführungsvideo (anschauen oder überspringen), danach mit Claude: 6 themenspezifische Multiple-Choice-Fragen (leicht → schwer) + Suchlink für ein Einführungsvideo; ohne Key: 5 Selbsteinschätzungsfragen → Startniveau 0–3.
 4. **Lernplan** – 3–6 Monate (je nach Wochenstunden); mit Claude themenspezifisch aus Niveau und Schwächen erzeugt, sonst Vorlage. Mit Wochenrhythmus und Studienbezug (Spacing, Testing-Effekt, Deliberate Practice, Interleaving, Desirable Difficulties, Habit-Bildung).
 
 Der Stand wird im `localStorage` gespeichert.
+
+### Videos
+
+Setze `YOUTUBE_API_KEY` ([YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com)), dann sucht der Server pro Thema ein einbettbares Einführungsvideo und erzeugt die Testfragen passend zu Titel und Beschreibung. Eingebettet wird über `youtube-nocookie.com`. Ohne Key bleibt es bei einem Suchlink. Grenze: Claude sieht das Video nicht (kein Transkript), die Fragen decken die üblichen Kerninhalte ab und sind bewusst auch ohne Video beantwortbar.
 
 ## Bewerbungsfunnel (Unternehmen → Plattform)
 
