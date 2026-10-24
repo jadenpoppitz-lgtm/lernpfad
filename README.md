@@ -20,7 +20,7 @@ Ohne Key startet derselbe Server im **Vorlagen-Modus** (Selbsteinschätzung + St
 
 1. **Eingabe** – nur Frage und Suchfeld (animierte Beispiele, Demo-Link „Data Science“); danach drei Einzelfragen: Warum (Beruf/Hobby/Privates Projekt), Zeit pro Woche (1–2 / 3–5 / 6+ Std.), Dauer (4 / 8 / 12 Wochen).
 2. **Loading** – animierte Mind-Map, an jedem Arm kommen Bild-/Dokument-/Video-/Link-Knoten dazu.
-3. **Wissenscheck** – eine Seite: Videokarte oben (YouTube lädt erst nach Klick, „Video überspringen ↓“), darunter alle Fragen als Pills und ein Feld „Weitere Präferenzen“. Mit `YOUTUBE_API_KEY` ein automatisch gefundenes Video, mit Claude Multiple-Choice-Fragen, ohne Key Selbsteinschätzung – mit `YOUTUBE_API_KEY` zuerst ein automatisch gefundenes, einbettbares Einführungsvideo (anschauen oder überspringen), danach mit Claude: 6 themenspezifische Multiple-Choice-Fragen (leicht → schwer) + Suchlink für ein Einführungsvideo; ohne Key: 5 Selbsteinschätzungsfragen → Startniveau 0–3.
+3. **Wissenscheck** – eine Seite: Videokarte oben (YouTube lädt erst nach Klick, „Video überspringen ↓“), darunter alle Fragen als Pills und ein Feld „Weitere Präferenzen“. Mit `YOUTUBE_API_KEY` wird automatisch ein Einführungsvideo gefunden, mit Claude entstehen 6 themenspezifische Multiple-Choice-Fragen (leicht → schwer); ohne Keys gibt es einen YouTube-Suchlink und 5 Selbsteinschätzungsfragen. Daraus ergibt sich das Startniveau 0–3.
 4. **Lernplan** – so viele Wochen, wie gewählt (4/8/12); mit Claude themenspezifisch aus Niveau und Schwächen erzeugt, sonst Vorlage. Mit Wochenrhythmus und Studienbezug (Spacing, Testing-Effekt, Deliberate Practice, Interleaving, Desirable Difficulties, Habit-Bildung).
 
 Der Stand wird im `localStorage` gespeichert.
