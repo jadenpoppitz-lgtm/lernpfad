@@ -134,7 +134,7 @@ function startTest(data) {
     $("test-opts").innerHTML =
       `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${vid.id}" title="${esc(vid.title)}" loading="lazy" allowfullscreen ` +
       `allow="encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"></iframe></div>` +
-      `<p class="muted small">${esc(vid.channel)} · Danach folgen ${qs.length} Fragen.</p>` +
+      `<p class="muted small">${esc(vid.channel)}${vid.minutes ? ` · ca. ${+vid.minutes} min` : ""} · Danach folgen ${qs.length} Fragen.</p>` +
       `<button class="primary" id="v-go" style="margin-top:8px">Weiter zu den Fragen →</button>` +
       `<button class="ghost" id="v-skip" style="margin-top:8px">Überspringen – kenne ich schon</button>`;
     $("v-go").onclick = $("v-skip").onclick = render;

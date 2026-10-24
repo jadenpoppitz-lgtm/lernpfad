@@ -37,13 +37,24 @@ const SYS = "Du bist ein Lerncoach, der sich an Ergebnissen der Lernpsychologie 
 async function findVideo(topic) {
   if (!YT_KEY) return null;
   try {
-    const u = new URL(YT_URL + "/youtube/v3/search");
-    u.search = new URLSearchParams({ part: "snippet", type: "video", videoEmbeddable: "true", safeSearch: "strict", maxResults: "1",
-      relevanceLanguage: "de", q: topic + " Einführung für Anfänger", key: YT_KEY });
-    const r = await fetch(u, { signal: AbortSignal.timeout(8000) });
-    const it = (await r.json()).items?.[0];
-    if (!it || !/^[\w-]{11}$/.test(it.id.videoId)) return null;
-    return { id: it.id.videoId, title: it.snippet.title, channel: it.snippet.channelTitle, description: it.snippet.description };
+    const yt = async (endpoint, params) => {
+      const u = new URL(YT_URL + "/youtube/v3/" + endpoint);
+      u.search = new URLSearchParams({ ...params, key: YT_KEY });
+      return (await fetch(u, { signal: AbortSignal.timeout(8000) })).json();
+    };
+    // Kandidaten (4–20 min, einbettbar), dann per Dauer das Video wählen, das einem ~15-Minuten-Einstieg am nächsten kommt
+    const found = await yt("search", { part: "snippet", type: "video", videoEmbeddable: "true", videoDuration: "medium", safeSearch: "strict",
+      maxResults: "10", relevanceLanguage: "de", q: topic + " Einführung für Anfänger" });
+    const ids = (found.items || []).map((i) => i.id.videoId).filter((id) => /^[\w-]{11}$/.test(id));
+    if (!ids.length) return null;
+    const details = await yt("videos", { part: "contentDetails,snippet", id: ids.join(",") });
+    const secs = (d) => { const m = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(d) || []; return (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0); };
+    const best = (details.items || []).map((v) => ({ v, s: secs(v.contentDetails.duration) }))
+      .filter((x) => x.s >= 600 && x.s <= 1200)
+      .sort((a, b) => Math.abs(a.s - 900) - Math.abs(b.s - 900))[0];
+    if (!best) return null;
+    const v = best.v;
+    return { id: v.id, title: v.snippet.title, channel: v.snippet.channelTitle, description: v.snippet.description, minutes: Math.round(best.s / 60) };
   } catch { return null; }
 }
 
@@ -62,7 +73,7 @@ const handlers = {
       `Format: {"videoQuery": "YouTube-Suchbegriff für ein Einführungsvideo", "questions": [{"q": "...", "options": ["...","...","...","..."], "correct": 0}]}`);
     const qs = (out.questions || []).filter((q) => q.q && Array.isArray(q.options) && q.options.length === 4 && q.correct >= 0 && q.correct < 4);
     if (qs.length < 3) throw Object.assign(new Error("Test unbrauchbar"), { status: 502 });
-    return { video: video && { id: video.id, title: video.title, channel: video.channel },
+    return { video: video && { id: video.id, title: video.title, channel: video.channel, minutes: video.minutes },
       videoQuery: String(out.videoQuery || topic + " Einführung"), questions: qs };
   },
 

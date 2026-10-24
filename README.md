@@ -27,7 +27,7 @@ Der Stand wird im `localStorage` gespeichert.
 
 ### Videos
 
-Setze `YOUTUBE_API_KEY` ([YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com)), dann sucht der Server pro Thema ein einbettbares Einführungsvideo und erzeugt die Testfragen passend zu Titel und Beschreibung. Eingebettet wird über `youtube-nocookie.com`. Ohne Key bleibt es bei einem Suchlink. Grenze: Claude sieht das Video nicht (kein Transkript), die Fragen decken die üblichen Kerninhalte ab und sind bewusst auch ohne Video beantwortbar.
+Setze `YOUTUBE_API_KEY` ([YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com)), dann sucht der Server pro Thema ein einbettbares Einführungsvideo von etwa 15 Minuten (10–20 min, nächstes an 15) und erzeugt die Testfragen passend zu Titel und Beschreibung. Eingebettet wird über `youtube-nocookie.com`. Ohne Key bleibt es bei einem Suchlink. Grenze: Claude sieht das Video nicht (kein Transkript), die Fragen decken die üblichen Kerninhalte ab und sind bewusst auch ohne Video beantwortbar.
 
 ## Bewerbungsfunnel (Unternehmen → Plattform)
 
