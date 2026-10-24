@@ -3,6 +3,45 @@
 // Nutzt $, esc, show, state, api, renderPlan aus app.js.
 
 const HRKEY = "dreamz.hr";
+
+// Demo-Anzeige (fiktiv) für die Unternehmensseite
+const DEMO_JOB = {
+  title: "Praktikum Data Science (m/w/d)",
+  company: "Lumora Analytics",
+  text: `Praktikum Data Science (m/w/d) – Lumora Analytics
+
+Lumora Analytics GmbH · Leipzig · Hybrid (2–3 Tage im Büro) · ab März 2027, 6 Monate
+
+Über uns
+Lumora Analytics ist ein Analytics-Startup mit rund 60 Mitarbeitenden. Wir helfen mittelständischen Industrie- und Energieunternehmen, ihre Daten nutzbar zu machen, von der Absatzprognose bis zur vorausschauenden Wartung von Anlagen. Unser Team aus Data Scientists, Data Engineers und Fachberatern arbeitet eng an echten Kundenprojekten.
+
+Deine Aufgaben
+- Du unterstützt unser Data-Science-Team bei der Entwicklung von Prognosemodellen, z. B. für Energieverbrauch, Nachfrage oder Maschinenausfälle
+- Du bereitest Daten aus verschiedenen Quellen auf (Sensordaten, ERP-Systeme, Zeitreihen) und führst explorative Analysen durch
+- Du trainierst, evaluierst und vergleichst ML-Modelle (Regression, Gradient Boosting, einfache neuronale Netze)
+- Du visualisierst Ergebnisse in Dashboards und bereitest sie verständlich für Kunden auf
+- Du arbeitest an einem eigenen kleinen Projekt, das du am Ende des Praktikums vor dem Team präsentierst
+
+Dein Profil
+- Laufendes Studium in Wirtschaftsingenieurwesen, Informatik, Mathematik, Elektrotechnik oder einem vergleichbaren Fach
+- Gute Kenntnisse in Python (pandas, NumPy, scikit-learn), erste Erfahrung mit SQL
+- Grundverständnis von Statistik und Machine Learning
+- Von Vorteil: Erfahrung mit Zeitreihenanalyse, Git oder einem Cloud-Umfeld (z. B. Azure, AWS)
+- Analytisches Denken und Freude daran, technische Ergebnisse auch Nicht-Expert:innen zu erklären
+- Sehr gute Deutsch- und gute Englischkenntnisse
+
+Was wir bieten
+- Vergütung von 1.900 € brutto im Monat
+- Feste Ansprechperson und wöchentliche 1:1-Gespräche
+- Echte Verantwortung in Kundenprojekten statt Kaffee kochen
+- Möglichkeit, deine Abschlussarbeit bei uns zu schreiben
+- Flexible Arbeitszeiten, Deutschlandticket-Zuschuss, Team-Events
+
+Bewerbung
+Sende uns deinen Lebenslauf, einen aktuellen Notenspiegel und ein paar Sätze, warum dich Data Science reizt. Ein Anschreiben ist nicht zwingend nötig. Ansprechpartnerin: Jana Reuter, Talent Acquisition.
+
+Fiktives Beispiel: Unternehmen, Ansprechperson und Konditionen sind frei erfunden.`,
+};
 const view = (html) => { $("s-view").innerHTML = html; show("s-view"); };
 const call = (method, url, body) =>
   fetch(url, { method, headers: { "content-type": "application/json" }, body: body && JSON.stringify(body) })
@@ -13,20 +52,45 @@ const meter = (p) => `<div class="meter"><i style="width:${p}%"></i></div>`;
 const hrTokens = () => { try { return JSON.parse(localStorage.getItem(HRKEY) || "{}"); } catch { return {}; } };
 
 /* ---------- HR: Anzeige hochladen ---------- */
-function hrUpload() {
+function hrUpload(text = "", msg = "") {
   view(`<p class="muted"><a href="#">← Zurück</a> · Für Unternehmen</p>
     <h1>Stellenanzeige hochladen</h1>
     <p>Daraus entstehen Skill-Profil, Skilltest und ein Vorbereitungskurs für Bewerber. Du prüfst es kurz und veröffentlichst.</p>
-    <textarea id="jt" placeholder="Text der Stellenanzeige hier einfügen …"></textarea>
+    <details class="demo">
+      <summary>Demo-Anzeige: ${esc(DEMO_JOB.title)} – ${esc(DEMO_JOB.company)}</summary>
+      <pre>${esc(DEMO_JOB.text)}</pre>
+      <button type="button" id="jdemo">Diese Anzeige verwenden</button>
+    </details>
+    <textarea id="jt" placeholder="Text der Stellenanzeige hier einfügen …">${esc(text)}</textarea>
     <input type="file" id="jf" accept=".txt,.md" class="small muted">
-    <button class="primary" id="jgo">Profil erstellen</button><p id="jmsg" class="muted"></p>`);
+    <button class="primary" id="jgo">Profil erstellen</button><p id="jmsg" class="muted">${esc(msg)}</p>`);
+  $("jdemo").onclick = () => { $("jt").value = DEMO_JOB.text; $("jt").scrollIntoView({ behavior: "smooth", block: "center" }); };
   $("jf").onchange = (e) => e.target.files[0] && e.target.files[0].text().then((t) => ($("jt").value = t));
   $("jgo").onclick = async () => {
-    if (!$("jt").value.trim()) return;
-    $("jgo").disabled = true; $("jmsg").textContent = "Anzeige wird ausgewertet …";
-    try { review(await call("POST", "/api/job/parse", { text: $("jt").value })); }
-    catch (e) { $("jgo").disabled = false; $("jmsg").textContent = "Fehlgeschlagen: " + e.message + " (Läuft der Server mit ANTHROPIC_API_KEY?)"; }
+    const t = $("jt").value;
+    if (!t.trim()) return;
+    // Kurzer Ladescreen, währenddessen Profil, Test und passender Kurs entstehen
+    showWait("Dein Profil wird erstellt");
+    const swap = setTimeout(() => showWait("Passender Kurs wird zusammengestellt"), 1600);
+    try {
+      const [draft] = await Promise.all([call("POST", "/api/job/parse", { text: t }), wait(3200)]);
+      clearTimeout(swap);
+      review(draft);
+    } catch (e) {
+      clearTimeout(swap);
+      hrUpload(t, "Fehlgeschlagen: " + e.message + " (Läuft der Server mit ANTHROPIC_API_KEY?)");
+    }
   };
+}
+
+function coursePreview(c) {
+  let from = 1;
+  return c.phases.map((p) => {
+    const to = from + p.weeks - 1;
+    const r = from === to ? `Woche ${from}` : `Woche ${from}–${to}`;
+    from = to + 1;
+    return `<div class="phase"><span class="when">${r}</span><b>${esc(p.name)}</b><ul>${p.tasks.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>`;
+  }).join("");
 }
 
 /* ---------- HR: Entwurf prüfen & veröffentlichen ---------- */
@@ -43,6 +107,9 @@ function review(d) {
       ${d.questions.map((q, i) => `<div class="row"><span>${esc(q.q)} <span class="tag">${esc(q.skill)}</span></span>
         <button class="x" data-rm-q="${i}" aria-label="Entfernen">×</button></div>`).join("")}
       <h3>Praxisaufgabe</h3><textarea id="rk">${esc(d.task)}</textarea>
+      ${d.course ? `<h3>Vorbereitungskurs für Bewerber</h3>
+        <p class="muted small">${esc(d.course.summary)} ${d.course.weeks} Wochen – Bewerber sehen diesen Kurs, wenn sie sich erst vorbereiten wollen.</p>
+        ${coursePreview(d.course)}` : ""}
       <p class="note">Bewerber sehen Profil und Anforderungen offen. Der Test ist eine Entscheidungshilfe für dich – die Entscheidung bleibt bei Menschen.</p>
       <button class="primary" id="pub">Veröffentlichen</button><p id="pmsg" class="muted"></p>`);
     const sync = () => { d.title = $("rt").value; d.company = $("rc").value; d.task = $("rk").value; };
@@ -80,17 +147,19 @@ async function jobLanding(id) {
       <button class="primary" id="b-apply" style="margin:0">Direkt bewerben – Skilltest starten</button>
       <button id="b-learn">Erst vorbereiten – Lernplan für diese Stelle</button>
       <select id="hrs" class="field" aria-label="Zeit pro Woche"><option value="2">1–2 Stunden pro Woche</option><option value="5" selected>3–5 Stunden pro Woche</option><option value="10">6+ Stunden pro Woche</option></select>
-      <select id="wks" class="field" aria-label="Dauer"><option value="4">4 Wochen</option><option value="8" selected>8 Wochen</option><option value="12">12 Wochen</option></select>
+      ${j.course ? "" : `<select id="wks" class="field" aria-label="Dauer"><option value="4">4 Wochen</option><option value="8" selected>8 Wochen</option><option value="12">12 Wochen</option></select>`}
     </div>`);
   $("b-apply").onclick = () => (location.hash = `#/j/${id}/apply`);
-  $("b-learn").onclick = () => learnFor(j, id, j.skills.filter((s) => s.must).map((s) => `${s.name} (Niveau ${s.level})`), +$("hrs").value, +$("wks").value);
+  $("b-learn").onclick = () => learnFor(j, id, j.skills.filter((s) => s.must).map((s) => `${s.name} (Niveau ${s.level})`), +$("hrs").value, $("wks") ? +$("wks").value : 8);
 }
 
 // Kurs: Lernplan aus den Anforderungen der Stelle, danach geht es mit "Jetzt bewerben" zurück
 async function learnFor(j, id, weak, hours, weeks) {
   Object.assign(state, { topic: j.title, context: "Beruf", hours: hours || state.hours || 5, weeks: weeks || state.weeks || 8, level: 1, jobId: id });
   $("b-learn") && ($("b-learn").textContent = "Lernplan wird erstellt …");
-  state.plan = await api("plan", { level: 1, weak }).catch(() => null);
+  // Direkt vorbereiten: der von HR geprüfte Kurs der Stelle; nach dem Test (Lücken): neuer, persönlicher Plan
+  if (j.course && !weak.some((w) => w.includes("Lücke"))) { state.plan = j.course; state.weeks = j.course.weeks; }
+  else state.plan = await api("plan", { level: 1, weak }).catch(() => null);
   localStorage.setItem(KEY, JSON.stringify(state));
   renderPlan();
 }

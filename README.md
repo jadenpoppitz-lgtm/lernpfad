@@ -31,9 +31,9 @@ Setze `YOUTUBE_API_KEY` ([YouTube Data API v3](https://console.cloud.google.com/
 
 ## Bewerbungsfunnel (Unternehmen → Plattform)
 
-1. **HR** öffnet `#/hr`, fügt die Stellenanzeige ein (Text oder .txt). Claude erzeugt Skill-Profil (Hard/Soft, Niveau, Muss/Nice), 6 Testfragen und eine Praxisaufgabe. HR prüft, streicht Unpassendes und veröffentlicht.
+1. **HR** öffnet `#/hr`, fügt die Stellenanzeige ein (Text, .txt oder die ausklappbare **Demo-Anzeige** „Praktikum Data Science – Lumora Analytics“, fiktiv). Nach „Profil erstellen“ folgt ein kurzer Ladescreen. Claude erzeugt Skill-Profil (Hard/Soft, Niveau, Muss/Nice), 6 Testfragen, eine Praxisaufgabe und einen **passenden 8-Wochen-Vorbereitungskurs**. HR prüft, streicht Unpassendes und veröffentlicht.
 2. HR bekommt einen **Bewerber-Link** (in die Anzeige setzen) und ein **privates Dashboard**.
-3. **Bewerber** sehen offen, was erwartet wird, und wählen: *Direkt bewerben* (Skilltest) oder *Erst vorbereiten* (Lernplan aus den Muss-Skills, danach „Jetzt bewerben“).
+3. **Bewerber** sehen offen, was erwartet wird, und wählen: *Direkt bewerben* (Skilltest) oder *Erst vorbereiten* (der von HR geprüfte Kurs der Stelle, danach „Jetzt bewerben“).
 4. Nach dem Test sehen Bewerber ihr Ergebnis pro Skill (dasselbe wie HR) und bekommen für Lücken einen Lernplan – auch wenn es nicht klappt, bleibt das Lernziel.
 5. HR sieht Bewerber nach Ergebnis sortiert, mit Skill-Aufschlüsselung. Das ist Entscheidungshilfe, kein automatisches Aussortieren.
 

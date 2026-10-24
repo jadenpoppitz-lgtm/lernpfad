@@ -126,3 +126,6 @@ legend { font-weight: 700; margin-bottom: 8px; }
 @keyframes wob { from { transform: translateY(-3px) rotate(-3deg); } to { transform: translateY(3px) rotate(3deg); } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
 @media (max-width: 640px) { #app { padding: 0 20px; } .brand { left: 20px; } .screen.step { padding-left: 0; } }
+.demo { border: 1.5px solid var(--ink); border-radius: 20px; padding: 14px 20px; margin: 8px 0 16px; }
+.demo summary { cursor: pointer; font-weight: 700; }
+.demo pre { white-space: pre-wrap; font: inherit; font-size: .85rem; color: var(--mute); max-height: 320px; overflow: auto; margin: 12px 0; padding-right: 8px; }

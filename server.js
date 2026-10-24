@@ -21,7 +21,7 @@ async function claude(system, user) {
   const r = await fetch(API_URL, {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": API_KEY, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: MODEL, max_tokens: 4000, system, messages: [{ role: "user", content: user }] }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 7000, system, messages: [{ role: "user", content: user }] }),
     signal: AbortSignal.timeout(60000),
   });
   if (!r.ok) throw Object.assign(new Error("Claude API " + r.status), { status: 502 });
@@ -112,7 +112,19 @@ function sanitizeDraft(d) {
     .map((q) => ({ q: str(q.q, 400), options: q.options.map((o) => str(o, 200)), correct: q.correct | 0, skill: names.has(q.skill) ? q.skill : skills[0].name }));
   const title = str(d.title, 100);
   if (!title || !skills.length || questions.length < 3) throw fail("Anzeige konnte nicht ausgewertet werden", 502);
-  return { title, company: str(d.company, 80), skills, questions, task: str(d.task, 500) };
+  return { title, company: str(d.company, 80), skills, questions, task: str(d.task, 500), course: sanitizeCourse(d.course) };
+}
+
+// Vorbereitungskurs zur Stelle (optional): gleiche Form wie der Lernplan, damit das Frontend ihn direkt anzeigen kann
+function sanitizeCourse(c) {
+  c = c || {};
+  const phases = (Array.isArray(c.phases) ? c.phases : []).slice(0, 6)
+    .map((p) => ({ name: str(p.name, 60), weeks: Math.min(12, Math.max(1, +p.weeks || 1)),
+      tasks: (Array.isArray(p.tasks) ? p.tasks : []).slice(0, 5).map((t) => str(t, 200)).filter(Boolean) }))
+    .filter((p) => p.name && p.tasks.length);
+  if (!phases.length) return null;
+  return { summary: str(c.summary, 300), weeks: phases.reduce((a, p) => a + p.weeks, 0), phases,
+    science: (Array.isArray(c.science) ? c.science : []).slice(0, 5).map((s) => ({ name: str(s.name, 60), text: str(s.text, 300) })) };
 }
 
 async function parseJob(text) {
@@ -121,12 +133,16 @@ async function parseJob(text) {
     `Leite daraus ab: Titel, Firma, 5-10 Skills (Hard und Soft) mit Niveau 1-3 und ob zwingend ("must"), ` +
     `einen Skilltest mit 6 Multiple-Choice-Fragen (je 4 Optionen, genau eine richtig, jede Frage einem Skill zugeordnet, praxisnah statt Auswendiglernen) ` +
     `und eine kurze offene Praxisaufgabe, deren Lösung der Bewerber in wenigen Sätzen begründet.\n` +
+    `Stelle außerdem einen passenden Vorbereitungskurs für Bewerber zusammen: 8 Wochen, 4 Phasen, die zusammen genau 8 Wochen füllen, ` +
+    `3-4 konkrete Aufgaben je Phase, ausgerichtet auf die Muss-Skills der Stelle (Spaced Repetition, Abrufpraxis, Deliberate Practice, Interleaving). ` +
+    `Der Kurs übt die Fertigkeiten, er nennt oder verrät keine Testfragen.\n` +
     `Format: {"title":"","company":"","skills":[{"name":"","type":"hard|soft","level":2,"must":true}],` +
-    `"questions":[{"q":"","options":["","","",""],"correct":0,"skill":"Skill-Name"}],"task":""}`);
+    `"questions":[{"q":"","options":["","","",""],"correct":0,"skill":"Skill-Name"}],"task":"",` +
+    `"course":{"summary":"1-2 Sätze","phases":[{"name":"","weeks":2,"tasks":[""]}],"science":[{"name":"Konzept","text":"Wie es im Kurs angewendet wird (Studie, Jahr)"}]}}`);
   return sanitizeDraft(out);
 }
 
-const publicJob = (j) => ({ id: j.id, title: j.title, company: j.company, skills: j.skills, task: j.task,
+const publicJob = (j) => ({ id: j.id, title: j.title, company: j.company, skills: j.skills, task: j.task, course: j.course,
   questions: j.questions.map(({ q, options, skill }) => ({ q, options, skill })) });
 
 async function applyTo(job, b) {

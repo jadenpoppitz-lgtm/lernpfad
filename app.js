@@ -194,10 +194,14 @@ function startTest(data) {
 }
 
 /* ---------- 5 · Kurs wird erstellt ---------- */
-async function finishTest(weak, notes) {
-  $("wobble").innerHTML = [..."Dein Kurs wird erstellt"]
+function showWait(text) {
+  $("wobble").innerHTML = [...text]
     .map((c, i) => `<span style="animation-delay:${(i * 0.07).toFixed(2)}s">${c === " " ? "&nbsp;" : esc(c)}</span>`).join("");
   show("s-wait");
+}
+
+async function finishTest(weak, notes) {
+  showWait("Dein Kurs wird erstellt");
   const [plan] = await Promise.all([api("plan", { level: state.level, weak, notes }).catch(() => null), wait(1800)]);
   state.plan = plan;
   localStorage.setItem(KEY, JSON.stringify(state));
